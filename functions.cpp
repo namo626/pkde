@@ -16,7 +16,7 @@ void slow_f(float* fs, float* xs, float* ys) {
     for (int j = 0; j < Ny; j++) {
       s += kernel(xs[i] - ys[j]);
     }
-    fs[i] = s;
+    fs[i] = s / (float)Ny;
   }
 }
 
@@ -24,6 +24,7 @@ void slow_f(float* fs, float* xs, float* ys) {
 void SIMD_f(float* fs, float* xs, float* ys) {
 
   __m256 hs = _mm256_set1_ps(h);
+  __m256 ny = _mm256_set1_ps(Ny);
   __m256 ones = _mm256_set1_ps(1.0);
 
   for (int i = 0; i < Nx; i+=8) {
@@ -40,8 +41,13 @@ void SIMD_f(float* fs, float* xs, float* ys) {
       z = _mm256_sub_ps(ones, z);
       f = _mm256_add_ps(f, z);
     }
+    /* Divide by n*h */
+    f = _mm256_div_ps(f, ny);
 
+    /* Store result */
     _mm256_storeu_ps(&fs[i], f);
+
+
   }
 }
 

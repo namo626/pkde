@@ -1,9 +1,9 @@
 #ifndef FUNCTIONS_H_
 #define FUNCTIONS_H_
 
-#define Nx 800000
-#define Ny 80000
-#define h 1.0
+#define Nx 8000
+#define Ny 8000
+#define h 12
 
 float kernel(float z);
 void SIMD_f(float* fs, float* xs, float* ys);
