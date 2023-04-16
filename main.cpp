@@ -14,7 +14,7 @@ int main(int argc, char *argv[]) {
   float* ys = (float*) malloc(Ny * sizeof(float));
 
   /* Range of values */
-  float xmax = 10.0;
+  float xmax = 5.0;
   float xmin = -xmax;
   //srand(0);
   std::default_random_engine generator;
@@ -64,6 +64,7 @@ int main(int argc, char *argv[]) {
   /*   assert(fabs(fs[i]) <= 1e-8); */
   /* } */
   printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  printf("h = %.5f\n", h);
 
   /* Write to csv. Format is xs, fs */
   FILE *fpt;

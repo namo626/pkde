@@ -6,7 +6,7 @@
 
 
 float kernel(float z) {
-  return (1.0 - z*z/(h*h));
+  return (3./4)*(1.0 - z*z);
 }
 
 void slow_f(float* fs, float* xs, float* ys) {
@@ -14,9 +14,9 @@ void slow_f(float* fs, float* xs, float* ys) {
   for (int i = 0; i < Nx; i++) {
     s = 0.0;
     for (int j = 0; j < Ny; j++) {
-      s += kernel(xs[i] - ys[j]);
+      s += kernel((xs[i] - ys[j]) / h );
     }
-    fs[i] = s / (h*(float)Ny);
+    fs[i] = s / (h*Ny);
   }
 }
 
