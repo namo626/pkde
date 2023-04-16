@@ -16,7 +16,7 @@ void slow_f(float* fs, float* xs, float* ys) {
     for (int j = 0; j < Ny; j++) {
       s += kernel(xs[i] - ys[j]);
     }
-    fs[i] = s / (float)Ny;
+    fs[i] = s / (h*(float)Ny);
   }
 }
 
