@@ -3,7 +3,7 @@
 
 #define Nx 8000
 #define Ny 8000
-#define h 12
+#define h 10
 
 float kernel(float z);
 void SIMD_f(float* fs, float* xs, float* ys);
