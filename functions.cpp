@@ -6,7 +6,12 @@
 
 
 float kernel(float z) {
-  return (3./4)*(1.0 - z*z);
+  if (abs(z) <= 1.0) {
+    return  (3./4)*(1.0 - z*z);
+  }
+  else {
+    return 0.0;
+  }
 }
 
 void slow_f(float* fs, float* xs, float* ys) {
