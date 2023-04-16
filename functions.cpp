@@ -23,7 +23,7 @@ void slow_f(float* fs, float* xs, float* ys) {
 
 void SIMD_f(float* fs, float* xs, float* ys) {
 
-  __m256 hs = _mm256_set1_ps(h);
+  __m256 hs = _mm256_set1_ps(h*h);
   __m256 ny = _mm256_set1_ps(Ny);
   __m256 ones = _mm256_set1_ps(1.0);
 

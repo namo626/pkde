@@ -15,9 +15,10 @@ int main(int argc, char *argv[]) {
 
   /* Range of values */
   float xmax = 10.0;
+  float xmin = -xmax;
   //srand(0);
   std::default_random_engine generator;
-  std::normal_distribution<float> d(xmax/2.0, 0.1);
+  std::normal_distribution<float> d(0, 1.0);
 
   /* Fill the sample array with random numbers */
   for (int i = 0; i < Ny; i++ ) {
@@ -27,9 +28,9 @@ int main(int argc, char *argv[]) {
   }
 
   /* Do a linspace */
-  float inc = xmax / (float)Nx;
+  float inc = (xmax - xmin) / (float)Nx;
   for (int i = 0; i < Nx; i++ ) {
-    xs[i] = i*inc;
+    xs[i] = i*inc + xmin;
   }
 
   clock_t tic = clock();
