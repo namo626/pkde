@@ -1,23 +1,70 @@
-# create a plotting class called Plotter
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
+from typing import Optional, Any
 
-sns.set(style="darkgrid")
+sns.set_style(style='darkgrid')
 
 
 class Plotter:
-    def __init__(self):
+    """
+    A class for plotting kernel density estimates (KDEs) and histograms of data.
+
+    Args:
+    -----
+    None
+
+    Methods:
+    --------
+    read_csv_file(filename: str) -> pd.DataFrame:
+        Reads in a CSV file and returns it as a Pandas DataFrame.
+
+    plot_kde(df: pd.DataFrame, hist: Optional[bool] = False, rug: Optional[bool] = False, kde: Optional[bool] = False) -> Any:
+        Plots the KDE and/or histogram of a given Pandas DataFrame.
+    """
+
+    def __init__(self) -> None:
         pass
 
-    def read_csv_file(self, filename):
+    def read_csv_file(self, filename: str) -> pd.DataFrame:
+        """
+        Reads in a CSV file and returns it as a Pandas DataFrame.
+
+        Args:
+        -----
+        filename (str): The name of the CSV file.
+
+        Returns:
+        --------
+        df (pd.DataFrame): The Pandas DataFrame of the CSV file.
+        """
         return pd.read_csv(filename, header=None, names=["x", "y", "p(x)"])
     
-    def plot_data(self, df):
+    def plot_kde(self, df: pd.DataFrame, hist: Optional[bool] = False, rug: Optional[bool] = False, kde: Optional[bool] = False) -> Any:
+        """
+        Plots the KDE and/or histogram of a given Pandas DataFrame.
+
+        Args:
+        -----
+        df (pd.DataFrame): The Pandas DataFrame to plot.
+        hist (bool, optional): Whether or not to plot a histogram. Default is False.
+        rug (bool, optional): Whether or not to plot a rug plot. Default is False.
+        kde (bool, optional): Whether or not to plot a KDE. Default is False.
+
+        Returns:
+        --------
+        None
+        """
         plt.figure(figsize=(12, 8))
-        plot = sns.histplot(data=df, x='y', kde=False, stat='density', bins=100, color='blue', label='Histogram')
-        sns.rugplot(df.x[::100], height=0.02, color='black',label='N = 8000 Samples')
-        sns.lineplot(data=df, x='x', y='p(x)',color='red', label='KDE ')
+        
+        if hist: 
+            sns.histplot(data=df, x='y', kde=False, stat='density', bins=100, color='blue', label='Histogram')
+        
+        if rug:
+            sns.rugplot(df.x[::100], height=0.02, color='black',label='N = 8000 Samples')
+        if kde:
+            sns.lineplot(data=df, x='x', y='p(x)',color='red', label='KDE ')
+            
         plt.ylabel('p(x)')
         plt.legend()
         plt.show()
