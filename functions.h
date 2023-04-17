@@ -3,8 +3,8 @@
 
 #include <math.h>
 
-#define Nx 8000
-#define Ny 8000
+#define Nx 8192
+#define Ny 8192
 #define h (3.49*1 / pow((float)Ny, 0.333))
 
 float kernel(float z);
