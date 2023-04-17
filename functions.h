@@ -7,9 +7,6 @@
 #define Ny 8192
 #define h (3.49*1 / pow((float)Ny, 0.333))
 
-float kernel(float z);
-void SIMD_f(float* fs, float* xs, float* ys);
-void unrolled_f(float* fs, float* xs, float* ys);
-void slow_f(float* fs, float* xs, float* ys);
+void writeOutput(char* fname, float* xs, float* ys, float* fs);
 
 #endif
