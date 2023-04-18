@@ -3,8 +3,8 @@
 
 #include <math.h>
 
-#define Nx 8192
-#define Ny 8192
+#define Nx (int)pow(2,15)
+#define Ny Nx
 #define h (3.49*1 / pow((float)Ny, 0.333))
 
 void writeOutput(char* fname, float* xs, float* ys, float* fs);

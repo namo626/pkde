@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "functions.h"
 #include <random>
+#include <time.h>
 
 #define threadsPerBlock 1024
 #define numBlocks (Nx / threadsPerBlock)
@@ -30,13 +31,34 @@ __device__ float CUDA_kernel(float z) {
 __global__ void CUDA_f(float* fs, float* xs, float* ys) {
   int tid = blockDim.x * blockIdx.x + threadIdx.x;
   float s = 0;
-  float x = xs[tid];
-  float temp;
+  //float x = xs[tid];
 
   for (int j = 0; j < Ny; j++) {
-    s += CUDA_kernel((x - ys[j]) / h );
+    s += CUDA_kernel((xs[tid] - ys[j]) / h );
   }
 
+  fs[tid] = s / (h*Ny);
+}
+
+#define BLOCK_SIZE 2*threadsPerBlock
+__global__ void CUDA_shared_f(float* fs, float* xs, float* ys) {
+  /* Shared memory storing y[i] */
+  __shared__ float yy[BLOCK_SIZE];
+  int tid = blockDim.x * blockIdx.x + threadIdx.x;
+  int id = threadIdx.x;
+  float x = xs[tid];
+
+  float s = 0;
+  for (int i = 0; i < Ny; i+=BLOCK_SIZE) {
+    for (int k = 0; k < BLOCK_SIZE/threadsPerBlock; k++) {
+      yy[i+k] =
+    __syncthreads();
+
+    for (int j = 0; j < BLOCK_SIZE; j++) {
+      s += CUDA_kernel((x - yy[j]) / h);
+    }
+    __syncthreads();
+  }
   fs[tid] = s / (h*Ny);
 }
 
@@ -73,11 +95,19 @@ int main() {
   HANDLE_ERROR( cudaMemcpy(xs_d, xs, Nx*sizeof(float), cudaMemcpyHostToDevice) );
   HANDLE_ERROR( cudaMemcpy(ys_d, ys, Ny*sizeof(float), cudaMemcpyHostToDevice) );
 
+  clock_t tic = clock();
   /* Launch CUDA kernel */
   CUDA_f<<<numBlocks, threadsPerBlock>>>(fs_d, xs_d, ys_d);
   HANDLE_ERROR( cudaGetLastError() );
 
+  /* Cache blocking */
+  CUDA_shared_f<<<numBlocks, threadsPerBlock>>>(fs_d, xs_d, ys_d);
+  HANDLE_ERROR( cudaGetLastError() );
+
+  clock_t toc = clock();
   HANDLE_ERROR( cudaMemcpy(fs, fs_d, Nx*sizeof(float), cudaMemcpyDeviceToHost) );
+
+  printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
 
   cudaFree(xs_d);
   cudaFree(ys_d);

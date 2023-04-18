@@ -29,7 +29,7 @@ void slow_f(float* fs, float* xs, float* ys) {
 
 void SIMD_f(float* fs, float* xs, float* ys) {
 
-  __m256 hs = _mm256_set1_ps(h*h);
+  __m256 hs = _mm256_set1_ps(h);
   __m256 ny = _mm256_set1_ps(Ny);
   __m256 ones = _mm256_set1_ps(1.0);
 
@@ -40,10 +40,10 @@ void SIMD_f(float* fs, float* xs, float* ys) {
     for (int j = 0; j < Ny; j++) {
       __m256 y = _mm256_broadcast_ss( &ys[j] );
       __m256 z = _mm256_sub_ps(x, y);
+      z = _mm256_div_ps(z, hs);
 
       /* using the kernel */
       z = _mm256_mul_ps(z,z);
-      z = _mm256_div_ps(z, hs);
       z = _mm256_sub_ps(ones, z);
       f = _mm256_add_ps(f, z);
     }
@@ -149,7 +149,6 @@ int main(int argc, char *argv[])
   /*   assert(fabs(fs[i]) <= 1e-8); */
   /* } */
   printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
-  printf("h = %.5f\n", h);
 
   /* Write to csv. Format is xs, fs */
   writeOutput("serial.csv", xs, ys, fs);
