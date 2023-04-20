@@ -40,7 +40,7 @@ __global__ void CUDA_f(float* fs, float* xs, float* ys) {
   fs[tid] = s / (h*Ny);
 }
 
-#define BLOCK_SIZE 2*threadsPerBlock
+#define BLOCK_SIZE threadsPerBlock
 __global__ void CUDA_shared_f(float* fs, float* xs, float* ys) {
   /* Shared memory storing y[i] */
   __shared__ float yy[BLOCK_SIZE];
@@ -50,8 +50,7 @@ __global__ void CUDA_shared_f(float* fs, float* xs, float* ys) {
 
   float s = 0;
   for (int i = 0; i < Ny; i+=BLOCK_SIZE) {
-    for (int k = 0; k < BLOCK_SIZE/threadsPerBlock; k++) {
-      yy[i+k] =
+    yy[id] = ys[id + i];
     __syncthreads();
 
     for (int j = 0; j < BLOCK_SIZE; j++) {
