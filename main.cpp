@@ -112,12 +112,12 @@ void mpi_f(float *fs, float *xs, float *ys)
   int local_Nx = Nx / size;                                    // Divide Nx among processors
   float *local_fs = (float *)malloc(local_Nx * sizeof(float)); // Allocate local memory for fs
 
-  // Scatter xs and ys to all processors
+  // Scatter xs to all processors
   float *local_xs = (float *)malloc(local_Nx * sizeof(float));
-  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
-  float *local_ys = (float *)malloc(Ny * sizeof(float));
+  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, dMPI_COMM_WORLD);
+
+  // Broadcast ys to all processors
   MPI_Bcast(ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
-  MPI_Scatter(ys, Ny, MPI_FLOAT, local_ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // Compute local fs
   for (int i = 0; i < local_Nx; i++)
@@ -125,7 +125,7 @@ void mpi_f(float *fs, float *xs, float *ys)
     float s = 0.0;
     for (int j = 0; j < Ny; j++)
     {
-      s += kernel((local_xs[i] - local_ys[j]) / h);
+      s += kernel((local_xs[i] - ys[j]) / h);
     }
     local_fs[i] = s / (h * Ny);
   }
@@ -136,7 +136,6 @@ void mpi_f(float *fs, float *xs, float *ys)
   // Clean up local memory
   free(local_fs);
   free(local_xs);
-  free(local_ys);
 
   // Clean up and finalize MPI
   MPI_Finalize();
