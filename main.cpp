@@ -114,7 +114,7 @@ void mpi_f(float *fs, float *xs, float *ys)
 
   // Scatter xs to all processors
   float *local_xs = (float *)malloc(local_Nx * sizeof(float));
-  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, dMPI_COMM_WORLD);
+  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
   // Broadcast ys to all processors
   MPI_Bcast(ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
   printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
 
   /* Write to csv. Format is xs, fs */
-  writeOutput("data/mpi.csv", xs, ys, fs);
+  writeOutput("mpi.csv", xs, ys, fs);
 
   return 0;
 }
