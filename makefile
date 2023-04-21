@@ -6,5 +6,8 @@ serial: main.cpp functions.cpp functions.h
 cuda: cuda.cu functions.h functions.cpp
 	nvcc -o cuda -O2 cuda.cu -gencode arch=compute_50,code=sm_50 functions.cpp
 
+mpi: main.cpp functions.cpp functions.h
+	mpiicc++ -o main -lm -g -O2 main.cpp functions.cpp -mavx2 -fno-unroll-loops -fno-peel-loops
+
 clean:
 	rm main cuda
