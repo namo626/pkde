@@ -109,8 +109,15 @@ void mpi_f(float *fs, float *xs, float *ys)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
+  printf("Rank: %d, Size: %d\n", rank, size);
+
   int local_Nx = Nx / size;                                    // Divide Nx among processors
   float *local_fs = (float *)malloc(local_Nx * sizeof(float)); // Allocate local memory for fs
+
+
+  printf("Global_Nx: %d\n", Nx);
+  printf("Local_Nx: %d\n", local_Nx);
+
 
   // Scatter xs to all processors
   float *local_xs = (float *)malloc(local_Nx * sizeof(float));
@@ -130,6 +137,7 @@ void mpi_f(float *fs, float *xs, float *ys)
     local_fs[i] = s / (h * Ny);
   }
 
+  printf("Size of local_fs array: %d\n", local_fs);
   // Gather local fs to fs on processor 0
   MPI_Gather(local_fs, local_Nx, MPI_FLOAT, fs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
@@ -209,8 +217,11 @@ int main(int argc, char *argv[])
   /* } */
   printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
 
-  /* Write to csv. Format is xs, fs */
-  writeOutput("mpi.csv", xs, ys, fs);
+
+   // Generate filename based on rank
+  char filename[256];
+  sprintf(filename, "mpi_nproc_%d.csv", size);
+  writeOutput(filename, xs, ys, fs);
 
   return 0;
 }
