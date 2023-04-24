@@ -7,7 +7,7 @@ class Processor:
         self.interim_data_dir = "../data/interim"
         self.processed_data_dir = "../data/processed"
 
-    def read_csv_file(self, filename: str,column_names: list[str]) -> pd.DataFrame:
+    def read_csv_file(self, filename: str, column_names: list[str]) -> pd.DataFrame:
         """
         Reads in a CSV file and returns it as a Pandas DataFrame.
 
@@ -20,23 +20,23 @@ class Processor:
         --------
         df (pd.DataFrame): The Pandas DataFrame of the CSV file.
         """
-        if column_names == 'kde':
+        if column_names == "kde":
             columns = ["x", "y", "p(x)"]
-            
-        elif column_names == 'num_points':
-            columns = ['Number_Points','Exectuion_Time']
-            
-        elif column_names == 'num_cores':
-            columns = ['Number_Cores','Execution_Time']
-            
-        elif column_names == 'num_threads':
-             columns = ['Number_Threads','Execution_Time']
-             
-        elif column_names =='num_tiles':
-            columns = ['Number_Tiles','Execution_Time']
+
+        elif column_names == "num_points":
+            columns = ["Number_Points", "Exectuion_Time"]
+
+        elif column_names == "num_cores":
+            columns = ["Number_Cores", "Execution_Time"]
+
+        elif column_names == "num_threads":
+            columns = ["Number_Threads", "Execution_Time"]
+
+        elif column_names == "num_tiles":
+            columns = ["Number_Tiles", "Execution_Time"]
         else:
-             columns=None
-             
+            columns = None
+
         return pd.read_csv(filename, header=None, names=columns)
 
     def read_pickle(self, filename: str) -> pd.DataFrame:
