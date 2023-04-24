@@ -7,7 +7,7 @@
 #include <random>
 #include <immintrin.h>
 #include <iostream>
-#include <mpi.h>
+// #include <mpi.h>
 
 float kernel(float z)
 {
@@ -31,6 +31,7 @@ void slow_f(float *fs, float *xs, float *ys)
     {
       s += kernel((xs[i] - ys[j]) / h);
     }
+    fs[i] = s/(h*Ny);
   }
 }
 
@@ -99,55 +100,55 @@ void unrolled_f(float *fs, float *xs, float *ys)
   }
 }
 
-void mpi_f(float *fs, float *xs, float *ys)
-{
-  int rank, size;
+// void mpi_f(float *fs, float *xs, float *ys)
+// {
+//   int rank, size;
 
-  // Initialize MPI
-  MPI_Init(NULL, NULL);
+//   // Initialize MPI
+//   MPI_Init(NULL, NULL);
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
+//   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//   MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-  printf("Rank: %d, Size: %d\n", rank, size);
+//   printf("Rank: %d, Size: %d\n", rank, size);
 
-  int local_Nx = Nx / size;                                    // Divide Nx among processors
-  float *local_fs = (float *)malloc(local_Nx * sizeof(float)); // Allocate local memory for fs
+//   int local_Nx = Nx / size;                                    // Divide Nx among processors
+//   float *local_fs = (float *)malloc(local_Nx * sizeof(float)); // Allocate local memory for fs
 
 
-  printf("Global_Nx: %d\n", Nx);
-  printf("Local_Nx: %d\n", local_Nx);
+//   printf("Global_Nx: %d\n", Nx);
+//   printf("Local_Nx: %d\n", local_Nx);
 
 
   // Scatter xs to all processors
-  float *local_xs = (float *)malloc(local_Nx * sizeof(float));
-  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//   float *local_xs = (float *)malloc(local_Nx * sizeof(float));
+//   MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  // Broadcast ys to all processors
-  MPI_Bcast(ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//   // Broadcast ys to all processors
+//   MPI_Bcast(ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  // Compute local fs
-  for (int i = 0; i < local_Nx; i++)
-  {
-    float s = 0.0;
-    for (int j = 0; j < Ny; j++)
-    {
-      s += kernel((local_xs[i] - ys[j]) / h);
-    }
-    local_fs[i] = s / (h * Ny);
-  }
+//   // Compute local fs
+//   for (int i = 0; i < local_Nx; i++)
+//   {
+//     float s = 0.0;
+//     for (int j = 0; j < Ny; j++)
+//     {
+//       s += kernel((local_xs[i] - ys[j]) / h);
+//     }
+//     local_fs[i] = s / (h * Ny);
+//   }
 
-  printf("Size of local_fs array: %d\n", local_fs);
-  // Gather local fs to fs on processor 0
-  MPI_Gather(local_fs, local_Nx, MPI_FLOAT, fs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
+//   printf("Size of local_fs array: %d\n", local_fs);
+//   // Gather local fs to fs on processor 0
+//   MPI_Gather(local_fs, local_Nx, MPI_FLOAT, fs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-  // Clean up local memory
-  free(local_fs);
-  free(local_xs);
+//   // Clean up local memory
+//   free(local_fs);
+//   free(local_xs);
 
-  // Clean up and finalize MPI
-  MPI_Finalize();
-}
+//   // Clean up and finalize MPI
+//   MPI_Finalize();
+// }
 
 int main(int argc, char *argv[])
 {
@@ -174,9 +175,6 @@ int main(int argc, char *argv[])
     // ys[i] = xmax * (float)rand() / (float)(RAND_MAX);
     ys[i] = d(generator);
   }
-
- 
-
 
   /* Do a linspace */
   float inc = (xmax - xmin) / (float)Nx;
@@ -208,11 +206,11 @@ int main(int argc, char *argv[])
     strcpy(filename, "simd.csv");
     break;
 
-  case 4:
-    printf("Using MPI\n");
-    mpi_f(fs, xs, ys);
-    strcpy(filename, "mpi.csv");
-    break;
+  // case 4:
+  //   printf("Using MPI\n");
+  //   mpi_f(fs, xs, ys);
+  //   strcpy(filename, "mpi.csv");
+  //   break;
 
   default:
     printf("Using naive implementation\n");

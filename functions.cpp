@@ -29,8 +29,10 @@ void writeOutput(const char *fname, float *xs, float *ys, float *fs)
 void printElapsedTime(clock_t tic, clock_t toc)
 {
     double elapsedSeconds = (double)(toc - tic) / CLOCKS_PER_SEC;
-    printf("Elapsed: %f seconds\n", elapsedSeconds);
+    // printf("Elapsed: %f seconds\n", elapsedSeconds);
+    printf("%f\n",elapsedSeconds);
 }
+
 
 void checkFloatArray(float *fs)
 {
