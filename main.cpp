@@ -1,12 +1,14 @@
-#include "functions.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
+#include <ctime>
 #include <assert.h>
 #include <math.h>
 #include <random>
 #include <immintrin.h>
-#include <mpi.h>
+#include <chrono>
+#include "functions.h"
+
+using namespace std;
 
 float kernel(float z)
 {
@@ -19,6 +21,10 @@ float kernel(float z)
     return 0.0;
   }
 }
+
+//float Gaussian_kernel(float z) {
+//  return (1/1.77*expf(-z*z/2.0));
+//}
 
 void slow_f(float *fs, float *xs, float *ys)
 {
@@ -38,8 +44,10 @@ void SIMD_f(float *fs, float *xs, float *ys)
 {
 
   __m256 hs = _mm256_set1_ps(h);
-  __m256 ny = _mm256_set1_ps(Ny);
+  __m256 hny = _mm256_set1_ps(h*Ny);
   __m256 ones = _mm256_set1_ps(1.0);
+  __m256 twos = _mm256_set1_ps(2.0);
+  __m256 sqpi = _mm256_set1_ps(1.77);
 
   for (int i = 0; i < Nx; i += 8)
   {
@@ -52,106 +60,245 @@ void SIMD_f(float *fs, float *xs, float *ys)
       __m256 z = _mm256_sub_ps(x, y);
       z = _mm256_div_ps(z, hs);
 
-      /* using the kernel */
+      /* using the Epo kernel */
       z = _mm256_mul_ps(z, z);
       z = _mm256_sub_ps(ones, z);
       f = _mm256_add_ps(f, z);
+      //
+      /* using the Gaussian kernel */
+      //z = _mm256_mul_ps(z, z);
+      //z = _mm256_div_ps(z, twos);
+      //z = _mm256_exp_ps(z);
+      //z = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z));
+      //f = _mm256_add_ps(f, z);
+
     }
     /* Divide by n*h */
-    f = _mm256_div_ps(f, ny);
+    f = _mm256_div_ps(f, hny);
 
     /* Store result */
     _mm256_storeu_ps(&fs[i], f);
   }
 }
 
-void unrolled_f(float *fs, float *xs, float *ys)
+void SIMD_unrolled_f(float *fs, float *xs, float *ys)
 {
-  float s1, s2, s3, s4, s5;
-  float s6, s7, s8, s9, s10;
-  for (int i = 0; i < Nx; i += 10)
+
+  __m256 hs = _mm256_set1_ps(h);
+  __m256 hny = _mm256_set1_ps(h*Ny);
+  __m256 ones = _mm256_set1_ps(1.0);
+  __m256 twos = _mm256_set1_ps(2.0);
+  __m256 sqpi = _mm256_set1_ps(1.77);
+
+  for (int i = 0; i < Nx; i += 8)
   {
-    s1 = s2 = s3 = s4 = s5 = 0.0;
-    s6 = s7 = s8 = s9 = s10 = 0.0;
-    for (int j = 0; j < Ny; j++)
+    __m256 f = _mm256_setzero_ps();
+    __m256 f2 = _mm256_setzero_ps();
+    __m256 x = _mm256_loadu_ps(&xs[i]);
+
+    for (int j = 0; j < Ny; j += 2)
     {
-      s1 += kernel(xs[i] - ys[j]);
-      s2 += kernel(xs[i + 1] - ys[j]);
-      s3 += kernel(xs[i + 2] - ys[j]);
-      s4 += kernel(xs[i + 3] - ys[j]);
-      s5 += kernel(xs[i + 4] - ys[j]);
-      s6 += kernel(xs[i + 5] - ys[j]);
-      s7 += kernel(xs[i + 6] - ys[j]);
-      s8 += kernel(xs[i + 7] - ys[j]);
-      s9 += kernel(xs[i + 8] - ys[j]);
-      s10 += kernel(xs[i + 9] - ys[j]);
+      __m256 y = _mm256_broadcast_ss(&ys[j]);
+      __m256 z = _mm256_sub_ps(x, y);
+      z = _mm256_div_ps(z, hs);
+
+      /* using the Epo kernel */
+      z = _mm256_mul_ps(z, z);
+      z = _mm256_sub_ps(ones, z);
+      f = _mm256_add_ps(f, z);
+
+      /* using the Gaussian kernel */
+      //z = _mm256_mul_ps(z, z);
+      //z = _mm256_div_ps(z, twos);
+      //z = _mm256_exp_ps(z);
+      //z = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z));
+      //f = _mm256_add_ps(f, z);
+
+      /* fetch next y */
+      y = _mm256_broadcast_ss(&ys[j+1]);
+      __m256 z2 = _mm256_sub_ps(x, y);
+      z2 = _mm256_div_ps(z2, hs);
+
+      /* using the Epo kernel */
+      z2 = _mm256_mul_ps(z2, z2);
+      z2 = _mm256_sub_ps(ones, z2);
+      f2 = _mm256_add_ps(f2, z2);
+
+      /* using the Gaussian kernel */
+      //z2 = _mm256_mul_ps(z2, z2);
+      //z2 = _mm256_div_ps(z2, twos);
+      //z2 = _mm256_exp_ps(z2);
+      //z2 = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z2));
+      //f2 = _mm256_add_ps(f2, z2);
     }
-    fs[i] = s1;
-    fs[i + 1] = s2;
-    fs[i + 2] = s3;
-    fs[i + 3] = s4;
-    fs[i + 4] = s5;
-    fs[i + 5] = s6;
-    fs[i + 6] = s7;
-    fs[i + 7] = s8;
-    fs[i + 8] = s9;
-    fs[i + 9] = s10;
+    /* Divide by n*h */
+    f =  _mm256_add_ps(f, f2);
+    f = _mm256_div_ps(f, hny);
+
+    /* Store result */
+    _mm256_storeu_ps(&fs[i], f);
   }
 }
 
-void mpi_f(float *fs, float *xs, float *ys)
+void SIMD_unrolled_4_f(float *fs, float *xs, float *ys)
 {
-  int rank, size;
 
-  // Initialize MPI
-  MPI_Init(NULL, NULL);
+  __m256 hs = _mm256_set1_ps(h);
+  __m256 hny = _mm256_set1_ps(h*Ny);
+  __m256 ones = _mm256_set1_ps(1.0);
+  __m256 twos = _mm256_set1_ps(2.0);
+  __m256 sqpi = _mm256_set1_ps(1.77);
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-
-  printf("Rank: %d, Size: %d\n", rank, size);
-
-  int local_Nx = Nx / size;                                    // Divide Nx among processors
-  float *local_fs = (float *)malloc(local_Nx * sizeof(float)); // Allocate local memory for fs
-
-
-  printf("Global_Nx: %d\n", Nx);
-  printf("Local_Nx: %d\n", local_Nx);
-
-
-  // Scatter xs to all processors
-  float *local_xs = (float *)malloc(local_Nx * sizeof(float));
-  MPI_Scatter(xs, local_Nx, MPI_FLOAT, local_xs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  // Broadcast ys to all processors
-  MPI_Bcast(ys, Ny, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  // Compute local fs
-  for (int i = 0; i < local_Nx; i++)
+  for (int i = 0; i < Nx; i += 8)
   {
-    float s = 0.0;
+    __m256 f = _mm256_setzero_ps();
+    __m256 f2 = _mm256_setzero_ps();
+    __m256 f3 = _mm256_setzero_ps();
+    __m256 f4 = _mm256_setzero_ps();
+    __m256 x = _mm256_loadu_ps(&xs[i]);
+
+    for (int j = 0; j < Ny; j += 4)
+    {
+      __m256 y = _mm256_broadcast_ss(&ys[j]);
+      __m256 z = _mm256_sub_ps(x, y);
+      z = _mm256_div_ps(z, hs);
+
+      /* using the Gaussian kernel */
+      z = _mm256_mul_ps(z, z);
+      z = _mm256_div_ps(z, twos);
+      //z = _mm256_exp_ps(z);
+      z = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z));
+      f = _mm256_add_ps(f, z);
+
+      /* fetch next y */
+      y = _mm256_broadcast_ss(&ys[j+1]);
+      __m256 z2 = _mm256_sub_ps(x, y);
+      z2 = _mm256_div_ps(z2, hs);
+
+      /* using the Gaussian kernel */
+      z2 = _mm256_mul_ps(z2, z2);
+      z2 = _mm256_div_ps(z2, twos);
+      //z2 = _mm256_exp_ps(z2);
+      z2 = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z2));
+      f2 = _mm256_add_ps(f2, z2);
+
+      /* fetch next y */
+      y = _mm256_broadcast_ss(&ys[j+2]);
+      __m256 z3 = _mm256_sub_ps(x, y);
+      z3 = _mm256_div_ps(z3, hs);
+
+      /* using the Gaussian kernel */
+      z3 = _mm256_mul_ps(z3, z3);
+      z3 = _mm256_div_ps(z3, twos);
+      //z3 = _mm256_exp_ps(z3);
+      z3 = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z3));
+      f3 = _mm256_add_ps(f3, z3);
+
+      /* fetch next y */
+      y = _mm256_broadcast_ss(&ys[j+3]);
+      __m256 z4 = _mm256_sub_ps(x, y);
+      z4 = _mm256_div_ps(z4, hs);
+
+      /* using the Gaussian kernel */
+      z4 = _mm256_mul_ps(z4, z4);
+      z4 = _mm256_div_ps(z4, twos);
+      //z4 = _mm256_exp_ps(z4);
+      z4 = _mm256_div_ps(ones, _mm256_mul_ps(sqpi, z4));
+      f4 = _mm256_add_ps(f4, z4);
+    }
+    /* Divide by n*h */
+    f =  _mm256_add_ps(f, f2);
+    f3 =  _mm256_add_ps(f3, f4);
+    f =  _mm256_add_ps(f, f3);
+    f = _mm256_div_ps(f, hny);
+
+    /* Store result */
+    _mm256_storeu_ps(&fs[i], f);
+  }
+}
+void unrolled_f(float *fs, float *xs, float *ys)
+{
+  float s1, s2, s3, s4, s5;
+  float s6, s7, s8;
+  float y;
+  for (int i = 0; i < Nx; i += 8)
+  {
+    s1 = s2 = s3 = s4 = s5 = 0.0;
+    s6 = s7 = s8 = 0.0;
     for (int j = 0; j < Ny; j++)
     {
-      s += kernel((local_xs[i] - ys[j]) / h);
+      y = ys[j];
+      s1 += kernel((xs[i] - y) / h);
+      s2 += kernel((xs[i + 1] - y) / h);
+      s3 += kernel((xs[i + 2] - y) / h);
+      s4 += kernel((xs[i + 3] - y) / h);
+      s5 += kernel((xs[i + 4] - y) / h);
+      s6 += kernel((xs[i + 5] - y) / h);
+      s7 += kernel((xs[i + 6] - y) / h);
+      s8 += kernel((xs[i + 7] - y) / h);
     }
-    local_fs[i] = s / (h * Ny);
+    fs[i] = s1 / (h*Ny);
+    fs[i + 1] = s2 / (h*Ny);
+    fs[i + 2] = s3 / (h*Ny);
+    fs[i + 3] = s4 / (h*Ny);
+    fs[i + 4] = s5 / (h*Ny);
+    fs[i + 5] = s6 / (h*Ny);
+    fs[i + 6] = s7 / (h*Ny);
+    fs[i + 7] = s8 / (h*Ny);
   }
+}
 
-  printf("Size of local_fs array: %d\n", local_fs);
-  // Gather local fs to fs on processor 0
-  MPI_Gather(local_fs, local_Nx, MPI_FLOAT, fs, local_Nx, MPI_FLOAT, 0, MPI_COMM_WORLD);
-
-  // Clean up local memory
-  free(local_fs);
-  free(local_xs);
-
-  // Clean up and finalize MPI
-  MPI_Finalize();
+void unrolled_16_f(float *fs, float *xs, float *ys)
+{
+  float s1, s2, s3, s4, s5;
+  float s6, s7, s8, s9, s10, s11, s12, s13, s14, s15, s16;
+  float y;
+  for (int i = 0; i < Nx; i += 16)
+  {
+    s1 = s2 = s3 = s4 = s5 = 0.0;
+    s6 = s7 = s8 = s9 = s10 = s11 = s12 = s13 = s14 = 0.0;
+    s15 = s16 = 0;
+    for (int j = 0; j < Ny; j++)
+    {
+      y = ys[j];
+      s1 += kernel((xs[i] - y) / h);
+      s2 += kernel((xs[i + 1] - y) / h);
+      s3 += kernel((xs[i + 2] - y) / h);
+      s4 += kernel((xs[i + 3] - y) / h);
+      s5 += kernel((xs[i + 4] - y) / h);
+      s6 += kernel((xs[i + 5] - y) / h);
+      s7 += kernel((xs[i + 6] - y) / h);
+      s8 += kernel((xs[i + 7] - y) / h);
+      s9 += kernel((xs[i + 8] - y) / h);
+      s10 += kernel((xs[i + 9] - y) / h);
+      s11 += kernel((xs[i + 10] - y) / h);
+      s12 += kernel((xs[i + 11] - y) / h);
+      s13 += kernel((xs[i + 12] - y) / h);
+      s14 += kernel((xs[i + 13] - y) / h);
+      s15 += kernel((xs[i + 14] - y) / h);
+      s16 += kernel((xs[i + 15] - y) / h);
+    }
+    fs[i] = s1 / (h*Ny);
+    fs[i + 1] = s2 / (h*Ny);
+    fs[i + 2] = s3 / (h*Ny);
+    fs[i + 3] = s4 / (h*Ny);
+    fs[i + 4] = s5 / (h*Ny);
+    fs[i + 5] = s6 / (h*Ny);
+    fs[i + 6] = s7 / (h*Ny);
+    fs[i + 7] = s8 / (h*Ny);
+    fs[i + 8] = s9 / (h*Ny);
+    fs[i + 9] = s10 / (h*Ny);
+    fs[i + 10] = s11 / (h*Ny);
+    fs[i + 11] = s12 / (h*Ny);
+    fs[i + 12] = s13 / (h*Ny);
+    fs[i + 13] = s14 / (h*Ny);
+    fs[i + 14] = s15 / (h*Ny);
+    fs[i + 15] = s16 / (h*Ny);
+  }
 }
 
 int main(int argc, char *argv[])
 {
-  int option = atoi(argv[1]);
   /* Allocation */
   float *xs = (float *)malloc(Nx * sizeof(float));
   float *fs = (float *)malloc(Nx * sizeof(float));
@@ -179,49 +326,41 @@ int main(int argc, char *argv[])
     xs[i] = i * inc + xmin;
   }
 
-  clock_t tic = clock();
+  std::clock_t tic, toc;
+  tic = clock();
+  slow_f(fs, xs, ys);
+  toc = clock();
+  printf("Slow f - elapsed: %.7f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  writeOutput("slow.csv",xs, ys, fs);
 
-  printf("Option = %d\n", option);
-  switch (option)
-  {
-  case 1:
-    printf("Using naive implementation\n");
-    slow_f(fs, xs, ys);
-    break;
+  tic = std::clock();
+  unrolled_f(fs, xs, ys);
+  toc = std::clock();
+  printf("Unrolled f - elapsed: %.7f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  //printf("Unrolled f: %.7f seconds\n", (long double)chrono::duration_cast<chrono::seconds>(end-begin).count());
+  //writeOutput("unrolled.csv", xs, ys, fs);
+  
+  tic = std::clock();
+  unrolled_16_f(fs, xs, ys);
+  toc = std::clock();
+  printf("Unrolled 16 f - elapsed: %.7f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
 
-  case 2:
-    printf("Using loop unrolling\n");
-    unrolled_f(fs, xs, ys);
-    break;
+  tic = std::clock();
+  SIMD_f(fs, xs, ys);
+  toc = std::clock();
+  printf("SIMD f - elapsed: %.7f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  //writeOutput("simd.csv", xs, ys, fs);
 
-  case 3:
-    printf("Using SIMD\n");
-    SIMD_f(fs, xs, ys);
-    break;
+  tic = std::clock();
+  SIMD_unrolled_f(fs, xs, ys);
+  toc = std::clock();
+  printf("SIMD + unrolling f - elapsed: %.7f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  //writeOutput("simd2.csv", xs, ys, fs);
 
-  case 4:
-    printf("Using MPI\n");
-    mpi_f(fs, xs, ys);
-    break;
-
-  default:
-    printf("Using naive implementation\n");
-    slow_f(fs, xs, ys);
-  }
-
-  clock_t toc = clock();
-
-  /* Check result */
-  /* for (int i = 0; i < Nx; i++) { */
-  /*   assert(fabs(fs[i]) <= 1e-8); */
-  /* } */
-  printf("Elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
-
-
-   // Generate filename based on rank
-  char filename[256];
-  sprintf(filename, "mpi_nproc_%d.csv", size);
-  writeOutput(filename, xs, ys, fs);
-
+  //tic = std::clock();
+  //SIMD_unrolled_4_f(fs, xs, ys);
+  //toc = std::clock();
+  //printf("SIMD + 4 unrolling f - elapsed: %f seconds\n", (double)(toc - tic) / CLOCKS_PER_SEC);
+  //writeOutput("simd4.csv", xs, ys, fs);
   return 0;
 }

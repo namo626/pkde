@@ -8,7 +8,7 @@
 #define threadsPerBlock 512
 #define numBlocks (Nx / threadsPerBlock)
 #define HANDLE_ERROR(err) (HandleError(err,__FILE__,__LINE__))
-#define myKernel Gaussian_kernel
+#define myKernel Epa_kernel
 
 void HandleError( cudaError_t err, const char* file, int line) {
   if (err != cudaSuccess) {
@@ -166,9 +166,11 @@ int main() {
 
   CUDA_shared_f<<<numBlocks, threadsPerBlock>>>(fs_d, xs_d, ys_d);
   HANDLE_ERROR( cudaGetLastError() );
+  writeOutput("cuda_shared.csv",xs,ys,fs);
 
   CUDA_unrolled_f<<<numBlocks, threadsPerBlock>>>(fs_d, xs_d, ys_d);
   HANDLE_ERROR( cudaGetLastError() );
+  writeOutput("cuda_unroll.csv",xs,ys,fs);
 
   CUDA_16_unrolled_f<<<numBlocks, threadsPerBlock>>>(fs_d, xs_d, ys_d);
   HANDLE_ERROR( cudaGetLastError() );
