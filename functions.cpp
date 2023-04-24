@@ -9,7 +9,7 @@ void writeOutput(const char *fname, float *xs, float *ys, float *fs)
 {
 
     char path[100];                                     // assuming a maximum path length of 100 characters
-    snprintf(path, sizeof(path), "data/raw/%s", fname); // appending "data/raw/" to the original
+    snprintf(path, sizeof(path), "data/raw/kdes/%s", fname); // appending "data/raw/" to the original
 
     FILE *fpt;
     fpt = fopen(path, "w"); // opening the file with the modified path
@@ -30,7 +30,7 @@ void printElapsedTime(clock_t tic, clock_t toc)
 {
     double elapsedSeconds = (double)(toc - tic) / CLOCKS_PER_SEC;
     // printf("Elapsed: %f seconds\n", elapsedSeconds);
-    printf("%f\n",elapsedSeconds);
+    printf("%f\n,",elapsedSeconds);
 }
 
 

@@ -160,9 +160,9 @@ class Plotter:
 
         # Define line plot parameters
         line_styles = ["--", "--", "--", "--"]
-        marker_styles = ["o", "s", "^", "d"]
-        colors = ["blue", "green", "red", "purple"]
-        labels = ["Serial", "SIMD", "MPI", "CUDA"]
+        marker_styles = ["o", "s", "^"]
+        colors = ["blue", "green", "red"]
+        labels = ["Serial", "SIMD", "MPI"]
 
         # Loop through each line plot
         for i in range(len(labels)):
@@ -197,7 +197,6 @@ class Plotter:
     def plot_speedup_efficiency(
         self,
         df1: pd.DataFrame,
-        df2: pd.DataFrame,
         fig_size: tuple[int, int] = (16, 10),
         save: bool = False,
         filename: str = "temp_name.png",
@@ -207,7 +206,6 @@ class Plotter:
 
         Args:
             df1 (pd.DataFrame): First data frame with columns 'num_cores', 'speed_up', and 'parallel_efficiency'.
-            df2 (pd.DataFrame): Second data frame with columns 'num_cores', 'speed_up', and 'parallel_efficiency'.
             fig_size (Tuple[int, int], optional): Figure size. Defaults to (16, 10).
             save (bool, optional): Whether to save the plot to a file. Defaults to False.
             filename (str, optional): Filename to save the plot. Defaults to "temp_name.png".
@@ -228,16 +226,7 @@ class Plotter:
             marker="o",
             color="red",
         )
-        sns.lineplot(
-            x="num_cores",
-            y="speed_up",
-            data=df2,
-            label="CUDA",
-            linewidth=2,
-            linestyle="--",
-            marker="s",
-            color="green",
-        )
+
         plt.xlabel("Number of Cores", fontsize=14)
         plt.ylabel("Speed up Ratio", fontsize=14)
         plt.title("Speed up Ratio vs. Number of Cores", fontsize=16)
@@ -255,16 +244,7 @@ class Plotter:
             marker="o",
             color="red",
         )
-        sns.lineplot(
-            x="num_cores",
-            y="parallel_efficiency",
-            data=df2,
-            label="CUDA",
-            linewidth=2,
-            linestyle="--",
-            marker="s",
-            color="green",
-        )
+
         plt.xlabel("Number of Cores", fontsize=14)
         plt.ylabel("Parallel Efficiency", fontsize=14)
         plt.title("Parallel Efficiency vs. Number of Cores", fontsize=16)
