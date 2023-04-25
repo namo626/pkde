@@ -24,7 +24,7 @@ class Processor:
             columns = ["x", "y", "p(x)"]
 
         elif column_names == "num_points":
-            columns = ["Number_Points", "Exectuion_Time"]
+            columns = ["Number_Points", "Execution_Time"]
 
         elif column_names == "num_cores":
             columns = ["Number_Cores", "Execution_Time"]
@@ -67,20 +67,11 @@ class Processor:
         dataframe.to_pickle(file_path)
         print(f"Dataframe saved to pickle file: {file_path}")
 
-    def create_scaling_df(self, num_cores, serial_time, parallel_time):
-        # Create a dictionary to hold the data
-        data = {
-            "num_cores": num_cores,
-            "serial_time": serial_time,
-            "parallel_time": parallel_time,
-        }
-
-        # Create a pandas DataFrame from the dictionary
-        df = pd.DataFrame(data)
-
+    def create_scaling_df(self, mpi_df: pd.DataFrame) -> pd.DataFrame:
+        mpi_df.reset_index(inplace=True)
         # Use chaining to calculate speed up ratio and parallel efficiency
-        df = df.assign(speed_up=df["serial_time"] / df["parallel_time"]).assign(
-            parallel_efficiency=lambda x: x["speed_up"] / x["num_cores"]
+        mpi_df = mpi_df.assign(Speed_Up=mpi_df["Serial"] / mpi_df["MPI"]).assign(
+            Parallel_Efficiency=lambda x: x["Speed_Up"] / x["Number_Cores"]
         )
 
-        return df
+        return mpi_df
