@@ -7,10 +7,14 @@
 
 
 
-#define Nx (int)pow(2,18)
-#define Ny Nx 
-#define h (3.49*1 / pow((float)Ny, 0.333))
+//#define Nx (int)powf(2,16)
+//#define Ny Nx 
+//#define h1 (float)(3.49*1 / (float)powf(Ny, 0.333))
+//#define h (float)(powf(Ny,0.333) / 3.49)
 
+const int Nx = (int)powf(2,18);
+const int Ny = Nx;
+const float h = (3.49 / (float)powf(Ny, 0.333));
 
 
 /**
@@ -44,6 +48,6 @@ void printElapsedTime(clock_t tic, clock_t toc);
  * @param fs Pointer to a float array representing the fs data.
  * @param Nx Number of elements in the xs, ys, and fs arrays.
  */
-void writeOutput(const char* fname, float* xs, float* ys, float* fs);
+void writeOutput(const char* fname, float* xs, float* ys, float* fs, int N);
 
 #endif

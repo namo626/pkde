@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void writeOutput(const char *fname, float *xs, float *ys, float *fs)
+void writeOutput(const char *fname, float *xs, float *ys, float *fs, int N)
 {
 
     char path[100];                                     // assuming a maximum path length of 100 characters
@@ -19,7 +19,7 @@ void writeOutput(const char *fname, float *xs, float *ys, float *fs)
         printf("Failed to open file: %s\n", fname);
         return;
     }
-    for (int i = 0; i < Nx; i++)
+    for (int i = 0; i < N; i++)
     {
         fprintf(fpt, "%.7f, %.7f, %.7f\n", xs[i], ys[i], fs[i]);
     }
