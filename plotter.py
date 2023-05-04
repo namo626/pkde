@@ -132,10 +132,60 @@ class Plotter:
         if save:
             plt.savefig(os.path.join(self.report_dir, filename))
 
+    def plot_executions_flops(
+        self,
+        time_df: pd.DataFrame,
+        flops_df: pd.DataFrame,
+        fig_size: tuple = (20, 12),
+        save: Optional[bool] = False,
+        filename: str = "executions_flops.png",
+    ) -> None:
+        """
+        Plots two DataFrames on a single figure with two subplots, representing
+        execution time and flop count per algorithm.
+
+        Args:
+            time_df (pd.DataFrame): DataFrame containing data for execution time per algorithm.
+            flops_df (pd.DataFrame): DataFrame containing data for flop count per algorithm.
+
+        Returns:
+            None
+        """
+        # Create a figure with two subplots
+        fig, axes = plt.subplots(1, 2, figsize=fig_size)
+
+        # First subplot - Execution Time per Algorithms
+        sns.lineplot(
+            data=time_df, lw=3, dashes=True, markers=True, markersize=12, ax=axes[0]
+        )
+        axes[0].set_xlabel("Number of Points", fontsize=14)
+        axes[0].set_ylabel("Execution Time (s)", fontsize=14)
+        axes[0].set_title("Execution Time per Algorithms", fontsize=18)
+        axes[0].legend(fontsize=12)  # Set legend fontsize
+
+        # Second subplot - Flop Count per Algorithm with y-axis on log scale
+        sns.lineplot(
+            data=flops_df, lw=3, dashes=True, markers=True, markersize=12, ax=axes[1]
+        )
+        axes[1].set_xlabel("Number of Points", fontsize=14)
+        axes[1].set_ylabel("Flops per (s)", fontsize=14)
+        axes[1].set_title("Flop Count per Algorithm", fontsize=18)
+        axes[1].set_yscale("log")  # Set y-axis to log scale
+        axes[1].legend(fontsize=12)  # Set legend fontsize
+
+        # Adjust spacing between subplots
+        plt.subplots_adjust(wspace=0.3)
+        plt.tight_layout()
+
+        if save:
+            plt.savefig(os.path.join(self.report_dir, filename))
+
+        plt.show()
+
     def plot_execution_time(
         self,
-        execution_times_df: pd.DataFrame,
-        x_grid: str,
+        core_df: pd.DataFrame,
+        parallel_type: str = "MPI",
         fig_size: tuple[int, int] = (12, 8),
         save: bool = False,
         filename: str = "execution.png",
@@ -158,32 +208,34 @@ class Plotter:
         # Set the figure size
         plt.figure(figsize=fig_size)
 
-        # Define line plot parameters
-        line_styles = ["--", "--", "--", "--"]
-        marker_styles = ["o", "s", "^"]
-        colors = ["blue", "green", "red"]
-        labels = ["Serial", "SIMD", "MPI"]
+        if parallel_type == "MPI":
+            x_grid = "Number_Cores"
+            y_grid = "MPI"
+        elif parallel_type == "Cuda Threads":
+            x_grid = "Number_Threads"
+            y_grid = "Cuda"
+        elif parallel_type == "Cuda Tiles":
+            x_grid = "Number_Tiles"
+            y_grid = "Cuda"
+        else:
+            raise ValueError("Invalid parallel_type. Must be 'MPI' or 'Cuda'.")
 
         # Loop through each line plot
-        for i in range(len(labels)):
-            sns.lineplot(
-                x=x_grid,
-                y=labels[i],
-                data=execution_times_df,
-                label=labels[i],
-                marker=marker_styles[i],
-                color=colors[i],
-                lw=1,
-                ls=line_styles[i],
-            )
 
-        # Set labels and title
-        if x_grid == "num_points":
-            plt.xlabel("Number of Points", fontsize=14)
-        else:
-            plt.xlabel("Number of Cores", fontsize=14)
+        sns.lineplot(
+            data=core_df,
+            x=x_grid,
+            y=y_grid,
+            marker="D",
+            color="red",
+            lw=2,
+            ls="--",
+            label=y_grid,
+        )
+
+        plt.xlabel(x_grid, fontsize=14)
         plt.ylabel("Execution Time (seconds)", fontsize=14)
-        plt.title("Kernel Density Estimation", fontsize=18)
+        plt.title(f"Scaling via {x_grid}", fontsize=18)
 
         # Add legend
         plt.legend()
@@ -217,13 +269,13 @@ class Plotter:
         # Plot speed up ratio
         plt.subplot(1, 2, 1)
         sns.lineplot(
-            x="num_cores",
-            y="speed_up",
+            x="Number_Cores",
+            y="Speed_Up",
             data=df1,
             label="MPI",
             linewidth=2,
             linestyle="--",
-            marker="o",
+            marker="D",
             color="red",
         )
 
@@ -235,14 +287,14 @@ class Plotter:
         # Plot parallel efficiency
         plt.subplot(1, 2, 2)
         sns.lineplot(
-            x="num_cores",
-            y="parallel_efficiency",
+            x="Number_Cores",
+            y="Parallel_Efficiency",
             data=df1,
             label="MPI",
             linewidth=2,
             linestyle="--",
-            marker="o",
-            color="red",
+            marker="D",
+            color="green",
         )
 
         plt.xlabel("Number of Cores", fontsize=14)
